@@ -1,0 +1,127 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title>Test page for coding</title>
+    <meta charset="utf-8"/>
+    <style type="text/css">
+        #myCanvas{
+            width: 900px;
+            height: 650px;
+            border: 1px solid black;
+            margin: 12px;
+        }
+    </style>
+</head>
+<body>
+
+    <div>
+        <input type="button" id="btnStart" value="开始"/>
+        <input type="button" id="btnEnd" value="结束" />
+        <input type="text" id="tbTime" />
+    </div>
+
+    <canvas id="myCanvas"></canvas>
+
+
+
+<script src="../Scripts/paper-core.min.js"></script>
+    <script src="../Scripts/jquery-1.12.4.min.js"></script>
+    <script src="../Scripts/jquery.signalR-2.1.2.min.js"></script>
+    <script src="../Scripts/color-methods.js"></script>
+    <script src='/signalr/hubs'></script>
+
+<script>
+    var _debugmode = true;     //调试模式开关
+    var groupName = "3";        //进入的分组名
+
+    //初始化画布
+    function intiCanvas(guessHub) {
+        var canvas = document.getElementById('myCanvas');
+        paper.setup(canvas);
+
+        var path, datePre, pointPre;
+        var tool = new paper.Tool();
+        tool.onMouseDown = function(event) {
+            datePre = new Date();
+            path = new paper.Path();
+            path.strokeColor = 'orange';
+            path.add(event.point);
+            pointPre = event.point;
+        }
+        tool.onMouseDrag = function(event) {
+            var date = new Date();
+            if (date - datePre > 80) {
+                datePre = date;
+                path.add(event.point);
+                var drawinfo = {
+                    l1: pointPre.x,
+                    t1: pointPre.y,
+                    l2: event.point.x,
+                    t2: event.point.y,
+                    c: colormethod.RGBToHex(path.strokeColor._canvasStyle),
+                    w: path.strokeWidth
+                };
+                var jsonstr = JSON.stringify(drawinfo);
+                guessHub.server.uploadLine(jsonstr);
+                pointPre = event.point;
+
+                if (_debugmode === true) console.log("发送绘制信息");
+                if (_debugmode === true) console.log(jsonstr);
+            }
+        }
+    }
+
+    //初始化Hub
+    function intiHub() {
+        var guessHub = $.connection.guessHub;
+        guessHub.client.drawLine = function (jsoninfo) {
+            if (jsoninfo == null || jsoninfo === "") return;
+            var drawinfo = JSON.parse(jsoninfo);
+
+            if (_debugmode === true) console.log("接到绘制信息");
+            if (_debugmode === true) console.log(drawinfo);
+
+            var path = new paper.Path();
+            path.strokeCap = 'round';
+            path.strokeColor = drawinfo.c;
+            path.strokeWidth = drawinfo.w;
+            var p1 = new paper.Point(drawinfo.l1, drawinfo.t1);
+            var p2 = new paper.Point(drawinfo.l2, drawinfo.t2);
+            path.moveTo(p1);
+            path.lineTo(p2);
+        };
+        guessHub.client.startGame = function () {
+        };
+        guessHub.client.endGame = function (winId) {
+        };
+        guessHub.client.recLeaveMsg = function (info) {
+            if (_debugmode === true) console.log(info.Name + "离开了");
+        };
+        $.connection.hub.start()
+            .then(function () {
+                var name = Math.random() * 10;
+                guessHub.server.addToGroup(groupName, parseFloat(name));
+            })
+            .done(function () { if (_debugmode === true) console.log("server连接成功."); })
+            .fail(function () { if (_debugmode === true) console.log('server连接失败!'); });
+
+        $("#btnStart").click(function () {
+            guessHub.server.startNewGame(groupName, "lll");
+        });
+        $("#btnEnd").click(function () {
+            guessHub.server.endGame(groupName, "");
+        });
+
+        return guessHub;
+    }
+
+    //初始化代码
+    $(function() {
+        var guessHub = intiHub();
+        intiCanvas(guessHub);
+    });
+</script>
+
+</body>
+</html>

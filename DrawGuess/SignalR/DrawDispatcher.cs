@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using Microsoft.AspNet.SignalR;
 using Microsoft.AspNet.SignalR.Hubs;
+using Newtonsoft.Json;
 
 namespace DrawGuess.SignalR
 {
@@ -66,11 +69,9 @@ namespace DrawGuess.SignalR
             foreach (KeyValuePair<string, GroupDetail> pair in _dicGroup)
             {
                 var list = pair.Value.ListConnectionId;
-                foreach (UserInfo info in list)
+                if (list.Any(info => info.ConnectionId.Equals(connectionId)))
                 {
-                    if (info.ConnectionId.Equals(connectionId))
-                        detail = pair.Value;
-                    break;
+                    detail = pair.Value;
                 }
             }
             return detail;
@@ -85,7 +86,8 @@ namespace DrawGuess.SignalR
                 GroupDetail detail = pair.Value;
                 if (detail.InfoUpdated || !detail.IsPlaying || detail.ListConnectionId.Count == 0) continue;
 
-                _hubContext.Clients.Group(pair.Key, detail.LastUpdateId).updateLine(detail.LastInfo);
+                string jsonInfo = JsonConvert.SerializeObject(detail.LastInfo);
+                _hubContext.Clients.Group(pair.Key, detail.LastUpdateId).drawLine(jsonInfo);
                 detail.InfoUpdated = true;
             }
         }
@@ -93,10 +95,9 @@ namespace DrawGuess.SignalR
         /// <summary>前台向后台更新绘制线</summary>
         /// <param name="connectionId">页面ID</param>
         /// <param name="info">绘制线信息</param>
-        public void UpdateLine(string connectionId, LineInfo info)
+        public void UploadLine(string connectionId, LineInfo info)
         {
             if (string.IsNullOrEmpty(connectionId) || info == null) return;
-
             GroupDetail detail = GetGroupDetail(connectionId);
             if (detail == null) return;
 
@@ -109,13 +110,13 @@ namespace DrawGuess.SignalR
         /// <param name="groupName">房间名称</param>
         /// <param name="connectionId">页面ID</param>
         /// <param name="info">绘制线信息</param>
-        public void UpdateLine(string groupName, string connectionId, LineInfo info)
+        public void UploadLine(string groupName, string connectionId, LineInfo info)
         {
             if (string.IsNullOrEmpty(groupName) || string.IsNullOrEmpty(connectionId) || info == null) return;
             if (!_dicGroup.ContainsKey(groupName)) return;
 
             var detail = _dicGroup[groupName];
-            if (Enumerable.Any(detail.ListConnectionId, userInfo => userInfo.ConnectionId.Equals(connectionId)))
+            if (detail.ListConnectionId.Any(userInfo => userInfo.ConnectionId.Equals(connectionId)))
             {
                 detail.LastInfo = info;
                 detail.LastUpdateId = connectionId;
@@ -164,6 +165,8 @@ namespace DrawGuess.SignalR
                 }
                 if (exist && index  != -1)
                 {
+                    _hubContext.Groups.Remove(connectionId, pair.Key);
+
                     UserInfo ui = new UserInfo(detail.ListConnectionId[index]);
                     detail.ListConnectionId.RemoveAt(index);
                     if (detail.ListPlayingId.Contains(connectionId)) detail.ListPlayingId.Remove(connectionId);
@@ -196,6 +199,7 @@ namespace DrawGuess.SignalR
             }
 
             ExitGroup(connectionId);
+            _hubContext.Groups.Add(connectionId, groupName);
             detail.ListConnectionId.Add(new UserInfo() {ConnectionId = connectionId, Name = userName});
             return detail.IsPlaying ? "Playing" : "Waiting";
         }
@@ -223,6 +227,8 @@ namespace DrawGuess.SignalR
                 IsPlaying = detail.IsPlaying,
                 UserInfos = detail.ListConnectionId.ToArray()
             };
+
+            _hubContext.Groups.Add(connectionId, groupName);
             return info;
         }
 
@@ -309,7 +315,7 @@ namespace DrawGuess.SignalR
 
     /*
      * 客户端需编写的函数：
-     * 1. updateLine(LineInfo info) - 被动更新绘制线信息。
+     * 1. drawLine(LineInfo info) - 被动更新绘制线信息。
      * 2. startGame() - 开始一局游戏。
      * 3. endGame(string winId) - winId为空表示时间到结束游戏；非空表示有玩家答对结束游戏。
      * 4. recLeaveMsg(UserInfo info) - 被动接收其他用户的离开信息

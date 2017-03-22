@@ -14,8 +14,7 @@ namespace DrawGuess.SignalR
         public double TopTo { get; set; }
         [JsonProperty("c")]
         public string Color { get; set; }
-
-        [JsonIgnore]
-        public string LastUpdatedBy { get; set; }
+        [JsonProperty("w")]
+        public string LineWidth { get; set; }
     }
 }
