@@ -16,7 +16,7 @@ namespace MyHelpers
         /// <summary>
         /// 数据库连接字符串(web.config来配置)
         /// </summary>
-        protected static string ConnStr;
+        public static string ConnStr;
 
         static MySqlHelper()
         {
@@ -26,7 +26,7 @@ namespace MyHelpers
             }
             catch (Exception e)
             {
-                LogHelper.WriteLog(nameof(SqlServerHelper), e);
+                //LogHelper.WriteLog(nameof(SqlServerHelper), e);
             }
         }
 

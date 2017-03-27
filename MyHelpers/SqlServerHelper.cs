@@ -16,7 +16,7 @@ namespace MyHelpers
         /// <summary>
         /// 连接字符串
         /// </summary>
-        protected static string ConnStr;
+        public static string ConnStr;
 
         static SqlServerHelper()
         {
@@ -26,7 +26,7 @@ namespace MyHelpers
             }
             catch (Exception e)
             {
-                LogHelper.WriteLog(nameof(SqlServerHelper), e);
+                //LogHelper.WriteLog(nameof(SqlServerHelper), e);
             }
         }
 

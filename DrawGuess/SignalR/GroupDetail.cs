@@ -12,6 +12,8 @@ namespace DrawGuess.SignalR
         public List<UserInfo> ListConnectionId { get; set; }
         public List<string> ListPlayingId { get; set; }
         public List<string> ListGuessedId { get; set; }
+        /// <summary>已准备的玩家ID列表（仅在等待时有用）</summary>
+        public List<string> ListReadyId { get; set; }
 
         public GroupDetail()
         {
@@ -23,6 +25,7 @@ namespace DrawGuess.SignalR
             ListConnectionId = new List<UserInfo>();
             ListPlayingId = new List<string>();
             ListGuessedId = new List<string>();
+            ListReadyId = new List<string>();
         }
     }
 }

@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using Microsoft.AspNet.SignalR;
 using Microsoft.AspNet.SignalR.Hubs;
@@ -24,17 +22,31 @@ namespace DrawGuess.SignalR
         private Timer _broadcastLoop;
         private readonly ConcurrentDictionary<string,GroupDetail> _dicGroup = new ConcurrentDictionary<string, GroupDetail>();
 
-        private static Random _ran = new Random();  //随机数生成器
+        private static Random _ran = new Random();      //随机数生成器
 
-        private readonly TimeSpan BroadcastInterval = TimeSpan.FromMilliseconds(40);        //每秒最多更新25次绘制信息
-        public const int MaxIdInGroup = 8;          //房间内的最大人数
-        public const int MinGroupNum = 1;           //最小房间号
-        public const int MaxGroupNum = 100;         //最大房间号
+        private readonly TimeSpan BroadcastInterval;    //每秒最多更新(1000/BroadcastInterval)次绘制信息
+        public static int IntrevalAutoDispatch = 40;    //自动分发的时间间隔（毫秒mm）
+        public static int MaxIdInGroup = 8;             //房间内的最大人数
+        public static int MinGroupNum = 1;              //最小房间号
+        public static int MaxGroupNum = 100;            //最大房间号
 
         public IHubConnectionContext<dynamic> Clients => _hubContext.Clients;
 
         public DrawDispatcher()
         {
+            try //尝试从配置中读取信息，出错则使用默认值
+            {
+                IntrevalAutoDispatch = Convert.ToInt32(GetAppSettings("IntrevalAutoDispatch"));
+                MaxIdInGroup = Convert.ToInt32(GetAppSettings("MaxIdInGroup"));
+                MinGroupNum = Convert.ToInt32(GetAppSettings("MinGroupNum"));
+                MaxGroupNum = Convert.ToInt32(GetAppSettings("MaxGroupNum"));
+            }
+            catch
+            {
+                // ignored
+            }
+            BroadcastInterval = TimeSpan.FromMilliseconds(IntrevalAutoDispatch);
+
             _hubContext = GlobalHost.ConnectionManager.GetHubContext<GuessHub>();
             _dicGroup.Clear();
             for (int i = MinGroupNum; i <= MaxGroupNum; i++)
@@ -47,6 +59,15 @@ namespace DrawGuess.SignalR
                 null,
                 BroadcastInterval,
                 BroadcastInterval);
+        }
+
+        /// <summary>读取app.config中的配置节项</summary>
+        /// <param name="key">Key</param>
+        /// <returns>Value</returns>
+        public string GetAppSettings(string key)
+        {
+            if (string.IsNullOrEmpty(key)) return null;
+            return System.Web.Configuration.WebConfigurationManager.AppSettings.Get(key);
         }
 
         /// <summary>判断房间是否已满员</summary>
@@ -140,6 +161,7 @@ namespace DrawGuess.SignalR
             copyDetail.ListConnectionId.AddRange(oriDetail.ListConnectionId);
             copyDetail.ListPlayingId.AddRange(oriDetail.ListPlayingId);
             copyDetail.ListGuessedId.AddRange(oriDetail.ListGuessedId);
+            copyDetail.ListReadyId.AddRange(oriDetail.ListReadyId);
             return copyDetail;
         }
 
@@ -171,6 +193,7 @@ namespace DrawGuess.SignalR
                     detail.ListConnectionId.RemoveAt(index);
                     if (detail.ListPlayingId.Contains(connectionId)) detail.ListPlayingId.Remove(connectionId);
                     if (detail.ListGuessedId.Contains(connectionId)) detail.ListPlayingId.Remove(connectionId);
+                    if (detail.ListReadyId.Contains(connectionId)) detail.ListReadyId.Remove(connectionId);
                     if (detail.IsPlaying)
                         _hubContext.Clients.Group(pair.Key).recLeaveMsg(ui);
                 }
@@ -201,14 +224,16 @@ namespace DrawGuess.SignalR
             ExitGroup(connectionId);
             _hubContext.Groups.Add(connectionId, groupName);
             detail.ListConnectionId.Add(new UserInfo() {ConnectionId = connectionId, Name = userName});
+            detail.ListReadyId.Add(connectionId);
             return detail.IsPlaying ? "Playing" : "Waiting";
         }
 
         /// <summary>加入一个随机的房间</summary>
         /// <param name="connectionId">页面ID</param>
+        /// <param name="userName">用户名</param>
         /// <returns>房间信息</returns>
         /// <remarks>输入项为空时，返回null</remarks>
-        public AddedGroupInfo AddToRandomGroup(string connectionId)
+        public AddedGroupInfo AddToRandomGroup(string connectionId, string userName)
         {
             if (string.IsNullOrEmpty(connectionId)) return null;
             ExitGroup(connectionId);
@@ -221,6 +246,7 @@ namespace DrawGuess.SignalR
                 if (!IsGroupFull(_dicGroup[groupName]))
                     detail = _dicGroup[groupName];
             }
+
             AddedGroupInfo info = new AddedGroupInfo
             {
                 GroupName = groupName,
@@ -229,6 +255,8 @@ namespace DrawGuess.SignalR
             };
 
             _hubContext.Groups.Add(connectionId, groupName);
+            detail.ListConnectionId.Add(new UserInfo() { ConnectionId = connectionId, Name = userName });
+            detail.ListReadyId.Add(connectionId);
             return info;
         }
 
