@@ -6,6 +6,7 @@ using System.Threading;
 using Microsoft.AspNet.SignalR;
 using Microsoft.AspNet.SignalR.Hubs;
 using Newtonsoft.Json;
+using NLog;
 
 namespace DrawGuess.SignalR
 {
@@ -22,6 +23,7 @@ namespace DrawGuess.SignalR
         private Timer _broadcastLoop;
         private readonly ConcurrentDictionary<string,GroupDetail> _dicGroup = new ConcurrentDictionary<string, GroupDetail>();
 
+        private static Logger _logger = LogManager.GetCurrentClassLogger();
         private static Random _ran = new Random();      //随机数生成器
 
         private readonly TimeSpan BroadcastInterval;    //每秒最多更新(1000/BroadcastInterval)次绘制信息
@@ -102,8 +104,10 @@ namespace DrawGuess.SignalR
         /// <param name="state">无用信息， 可传入null</param>
         public void BroadcastDrawing(object state)
         {
+            List<string> list = new List<string>();     //防止程序自动优化代码，确保字典被完整遍历
             foreach (KeyValuePair<string, GroupDetail> pair in _dicGroup)
             {
+                list.Add(pair.Key);
                 GroupDetail detail = pair.Value;
                 if (detail.InfoUpdated || !detail.IsPlaying || detail.ListConnectionId.Count == 0) continue;
 
@@ -111,6 +115,7 @@ namespace DrawGuess.SignalR
                 _hubContext.Clients.Group(pair.Key, detail.LastUpdateId).drawLine(jsonInfo);
                 detail.InfoUpdated = true;
             }
+            int count = list.Count;
         }
 
         /// <summary>前台向后台更新绘制线</summary>
