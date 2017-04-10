@@ -106,7 +106,29 @@
     <Reference Include="System.EnterpriseServices" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="css\metronic\components-md.css" />
+    <Content Include="css\metronic\components-md.min.css" />
+    <Content Include="css\metronic\plugins-md.css" />
+    <Content Include="css\metronic\plugins-md.min.css" />
+    <Content Include="Images\Avatar\boy_1.svg" />
+    <Content Include="Images\Avatar\boy_2.svg" />
+    <Content Include="Images\Avatar\boy_3.svg" />
+    <Content Include="Images\Avatar\boy_4.svg" />
+    <Content Include="Images\Avatar\boy_5.svg" />
+    <Content Include="Images\Avatar\boy_6.svg" />
+    <Content Include="Images\Avatar\boy_7.svg" />
+    <Content Include="Images\Avatar\boy_8.svg" />
+    <Content Include="Images\Avatar\girl_1.svg" />
+    <Content Include="Images\Avatar\girl_2.svg" />
+    <Content Include="Images\Avatar\girl_3.svg" />
+    <Content Include="Images\Avatar\girl_4.svg" />
+    <Content Include="Images\Avatar\girl_5.svg" />
+    <Content Include="Images\Avatar\girl_6.svg" />
+    <Content Include="Images\Avatar\girl_7.svg" />
+    <Content Include="Images\Avatar\girl_8.svg" />
+    <Content Include="Pages\404.html" />
     <Content Include="packages.config" />
+    <Content Include="Pages\Login.html" />
     <Content Include="Scripts\color-methods.js" />
     <Content Include="Scripts\jquery-1.12.4.min.map" />
     <Content Include="NLog.config">
@@ -198,9 +220,7 @@
       <Name>MyHelpers</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Images\Avatar\" />
-  </ItemGroup>
+  <ItemGroup />
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
