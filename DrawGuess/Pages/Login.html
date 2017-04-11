@@ -9,6 +9,8 @@
     <link href="../css/metronic/components-md.min.css" rel="stylesheet">
     <script src="//cdn.bootcss.com/jquery/1.12.4/jquery.min.js"></script>
     <script src="//cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="../Scripts/jquery.adaptive-backgrounds.js"></script>
+    <script src="//cdn.bootcss.com/underscore.js/1.8.3/underscore-min.js"></script>
     
     <style>
         .align-center {
@@ -25,32 +27,114 @@
             width: 90%;
             max-width: 150px;
             border: 1px dashed #ccc;
-            display: table-cell;
-            alignment: center;
             vertical-align: middle;
             text-align: center;
         }
         #avatar:hover {
-            -ms-transform:rotate(360deg);
-            -webkit-transform:rotate(360deg);
-            -moz-transform: rotate(360deg);
-            -o-transform: rotate(360deg);
-            transform:rotate(360deg);
+            -ms-transform:rotate(720deg);
+            -webkit-transform:rotate(720deg);
+            -moz-transform: rotate(720deg);
+            -o-transform: rotate(720deg);
+            transform:rotate(720deg);
         }
         .nav-tabs > li {
             float: right;
         }
     </style>
-    
+
     <script>
+        /*  全局变量
+        var _debug = false;     //是否为debug模式
+        */
+
+        //修改文本框的颜色标识
+        function changeClrClass(ele, errType) {
+            if (errType == null || errType === "") return;
+
+            if (errType.indexOf("has-") < 0)
+                errType = "has-" + errType;
+            var classes = ele.attr("class").split(" ");
+            if (classes.indexOf(errType) > -1) return;
+
+            classes.forEach(function (value) {
+                if (value.indexOf("has-") > -1) {
+                    ele.removeClass(value).addClass(errType);
+                }
+            });
+
+        };
+        //改变输入框的edited类
+        function changeEditedClass(ele, edited) {
+            if (edited === true) ele.addClass("edited");
+            else ele.removeClass("edited");
+        };
+        //绑定验证事件
+        function bindValicas() {
+            var debounceTime = 300;
+            //登录-用户名
+            var confLoginUser = _(function () {
+                var val = $("#input-login-user").val();
+                if (_debug) console.log("登录-用户名： " + val);
+                var errType;
+                if (val === "" || (val.length > 2 && val.length < 40)) errType = "info";
+                else errType = "error";
+            
+                changeClrClass($("#input-login-user").parent().parent(), errType);
+            }).debounce(debounceTime);
+            $("#input-login-user").bind("keyup", confLoginUser);
+            //登录-密码
+            var confLoginPass = _(function () {
+                var val = $("#input-login-pass").val();
+                var errType;
+                if (val !== "" && val.length > 5 && val.length < 21) errType = "info";
+                else errType = "error";
+            
+                changeClrClass($("#input-login-pass").parent().parent(), errType);
+            }).debounce(debounceTime);
+            $("#input-login-pass").bind("keyup", confLoginPass);
+            //注册-用户名
+            var confRegUser = _(function () {
+                var val = $("#input-reg-user").val();
+                changeEditedClass($("#input-reg-user"), val !== "");
+            }).debounce(debounceTime);
+            $("#input-reg-user").bind("keyup", confRegUser);
+            //注册-性别
+            var confRegSex = _(function () {
+                var val = $("#select-reg-sex").val();
+                changeEditedClass($("#select-reg-sex"), val !== "");
+            }).debounce(debounceTime);
+            $("#select-reg-sex").bind("change", confRegSex);
+            //注册-密码
+            var confRegPass = _(function () {
+                var val = $("#input-reg-pass").val();
+                var errType;
+                if (val !== "" && val.length > 5 && val.length < 21) errType = "info";
+                else errType = "error";
+
+                changeClrClass($("#input-reg-pass").parent(), errType);
+                changeEditedClass($("#input-reg-pass"), val !== "");
+            }).debounce(debounceTime);
+            $("#input-reg-pass").bind("keyup", confRegPass);
+        };
+
+
         $(function () {
             //图片点击事件
-            $("#avatar").click(function () {
+            var $avatar = $("#avatar");
+            $avatar.css("height", $avatar.width()); //调整图片高度与宽度相同
+            $avatar.click(function () {
                 if (this.src.indexOf("boy") >= 0)
                     this.src = "../Images/Avatar/girl_1.svg";
                 else
                     this.src = "../Images/Avatar/boy_1.svg";
+                $.adaptiveBackground.run(); //图片背景传染至父级
             });
+            //图片背景传染至父级
+            $.adaptiveBackground.run();
+            //绑定验证事件
+            bindValicas();
+
+
         });
     </script>
     
@@ -58,7 +142,7 @@
 </head>
 <body>
 <div class="align-center">
-    <img id="avatar" src="../Images/Avatar/boy_1.svg" alt="..." class="img-circle">
+    <img id="avatar" src="../Images/Avatar/boy_1.svg" alt="..." class="img-circle" data-adaptive-background>
 </div>
 
 <div class="tabbable-line nav-justified">
@@ -78,8 +162,8 @@
                     <span class="input-group-addon">
                         <i class="fa fa-envelope"></i>
                     </span>
-                    <input type="text" class="form-control" placeholder="请输入用户名...">
-                    <label for="form_control_1">用户名</label>
+                    <input type="text" id="input-login-user" class="form-control" placeholder="请输入用户名...">
+                    <label for="input-login-user">用户名</label>
                 </div>
             </div>
             <div class="form-group form-md-line-input has-error">
@@ -87,17 +171,17 @@
                     <span class="input-group-addon">
                         <i class="fa fa-envelope"></i>
                     </span>
-                    <input type="text" class="form-control" placeholder="请输入密码...">
-                    <label for="form_control_1">密码</label>
+                    <input type="password" id="input-login-pass" class="form-control" placeholder="请输入密码...">
+                    <label for="input-login-pass">密码</label>
                 </div>
             </div>
             <div class="form-group form-md-line-input has-warning">
                 <div class="input-group">
                     <span class="input-group-addon">$</span>
-                    <input type="text" class="form-control" placeholder="如您希望...">
+                    <input type="text" id="input-login-money" class="form-control" placeholder="如您希望...">
                     <span class="help-block">如您希望，可向我捐赠盒饭钱。谢谢O(∩_∩)O~</span>
                     <span class="input-group-addon">.00元</span>
-                    <label for="form_control_1">捐赠</label>
+                    <label for="input-login-money">捐赠</label>
                 </div>
             </div>
             <div class="form-actions col-md-12">
@@ -108,28 +192,26 @@
         </div>
 
         <div class="tab-pane" id="tab_2">
-            
             <div class="col-md-4">
                 <div class="form-group form-md-line-input form-md-floating-label">
-                    <input type="text" class="form-control" name="name" id="form_control_1">
-                    <label for="form_control_1">用户名</label>
+                    <input type="text" class="form-control" name="name" id="input-reg-user">
+                    <label for="input-reg-user">用户名</label>
                     <span class="help-block">用户名应与其他人不同...</span>
                 </div>
             </div>
             <div class="col-md-4 form-group form-md-line-input form-md-floating-label">
-                <select class="form-control" name="sex">
+                <select class="form-control" name="sex" id="select-reg-sex">
                     <option value=""></option>
-                    <option value="1">&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp男</option>
-                    <option value="2">&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp女</option>
+                    <option value="1">男</option>
+                    <option value="2">女</option>
                 </select>
-                <label for="form_control_1">&nbsp&nbsp&nbsp性别</label>
+                <label for="select-reg-sex">&nbsp&nbsp&nbsp性别</label>
                 <span class="help-block">同性选项正在紧急开通...</span>
             </div>
-
             <div class="col-md-4">
-                <div class="form-group form-md-line-input form-md-floating-label">
-                    <input type="text" class="form-control" name="password" id="form_control_1">
-                    <label for="form_control_1">密码</label>
+                <div class="form-group form-md-line-input form-md-floating-label has-error">
+                    <input type="password" class="form-control" name="password" id="input-reg-pass">
+                    <label for="input-reg-pass">密码</label>
                     <span class="help-block">密码应在6~20位之间...</span>
                 </div>
             </div>
