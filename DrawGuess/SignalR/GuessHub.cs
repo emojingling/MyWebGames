@@ -1,15 +1,16 @@
 ﻿using System;
-using System.IO;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNet.SignalR;
 using Newtonsoft.Json;
+using NLog;
 
 namespace DrawGuess.SignalR
 {
     public class GuessHub : Hub
     {
         private readonly DrawDispatcher _dispatcher;
+        private readonly bool _debugMode;
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
         public GuessHub()
             : this(DrawDispatcher.Instance)
@@ -19,6 +20,8 @@ namespace DrawGuess.SignalR
         public GuessHub(DrawDispatcher dispatcher)
         {
             _dispatcher = dispatcher;
+
+            _debugMode = Convert.ToBoolean(_dispatcher.GetAppSettings("DebugMode"));
         }
 
         public void UploadLine(string jsonInfo)
@@ -32,12 +35,9 @@ namespace DrawGuess.SignalR
 
         public string AddToGroup(string groupName, string userName)
         {
-            string str = "AddToGroup - groupName: " + groupName + ", userName: " + userName;
-            using (FileStream fs = new FileStream(@"E:\rec3.txt", FileMode.Append))
+            if (_debugMode)
             {
-                byte[] bytes1 = Encoding.ASCII.GetBytes(str + Environment.NewLine);
-                fs.Write(bytes1, 0, bytes1.Length);
-                fs.Close();
+                Logger.Debug("AddToGroup - groupName: {0}, userName: {1}", groupName, userName);
             }
 
             string connectionId = Context.ConnectionId;
@@ -46,12 +46,9 @@ namespace DrawGuess.SignalR
 
         public void StartNewGame(string groupName, string guessingWord)
         {
-            string str = "StartNewGame - groupName: " + groupName + ", guessingWord: " + guessingWord;
-            using (FileStream fs = new FileStream(@"E:\rec3.txt", FileMode.Append))
+            if (_debugMode)
             {
-                byte[] bytes1 = Encoding.ASCII.GetBytes(str + Environment.NewLine);
-                fs.Write(bytes1, 0, bytes1.Length);
-                fs.Close();
+                Logger.Debug("StartNewGame - groupName: {0}, guessingWord: {1}", groupName, guessingWord);
             }
 
             _dispatcher.StartNewGame(groupName, guessingWord);

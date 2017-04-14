@@ -110,6 +110,7 @@
     <Content Include="css\metronic\components-md.min.css" />
     <Content Include="css\metronic\plugins-md.css" />
     <Content Include="css\metronic\plugins-md.min.css" />
+    <Content Include="Global.asax" />
     <Content Include="Images\Avatar\boy_1.svg" />
     <Content Include="Images\Avatar\boy_2.svg" />
     <Content Include="Images\Avatar\boy_3.svg" />
@@ -202,6 +203,9 @@
     <Content Include="Web.config" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Global.asax.cs">
+      <DependentUpon>Global.asax</DependentUpon>
+    </Compile>
     <Compile Include="Manager\GuessDbHelper.cs" />
     <Compile Include="SignalR\AddedGroupInfo.cs" />
     <Compile Include="SignalR\UserInfo.cs" />

@@ -16,9 +16,12 @@
 <body>
 
     <div>
+        <label>房间号：</label>
+        <input type="text" id="tbRoomNo" />
+        <input type="button" id="btnConnect" value="连接" />
         <input type="button" id="btnStart" value="开始"/>
         <input type="button" id="btnEnd" value="结束" />
-        <input type="text" id="tbTime" />
+        <input type="text" id="tbTime"/>
     </div>
 
     <canvas id="myCanvas"></canvas>
@@ -29,11 +32,12 @@
     <script src="../Scripts/jquery-1.12.4.min.js"></script>
     <script src="../Scripts/jquery.signalR-2.1.2.min.js"></script>
     <script src="../Scripts/color-methods.js"></script>
+    <script src="//cdn.bootcss.com/chance/1.0.6/chance.min.js"></script>
     <script src='/signalr/hubs'></script>
 
 <script>
     var _debugmode = true;     //调试模式开关
-    var groupName = "1";        //进入的分组名
+    var chance = new Chance(Math.random);   //随机化器
     //$.connection.hub.id  //当前ID
 
     //初始化画布
@@ -46,7 +50,7 @@
         tool.onMouseDown = function(event) {
             datePre = new Date();
             path = new paper.Path();
-            path.strokeColor = 'orange';
+            path.strokeColor = chance.color();
             path.add(event.point);
             pointPre = event.point;
         }
@@ -93,24 +97,33 @@
             path.lineTo(p2);
         };
         guessHub.client.startGame = function () {
+            if (_debugmode === true) console.log("开始了！");
         };
         guessHub.client.endGame = function (winId) {
+            if (_debugmode === true) console.log("结束了！");
         };
         guessHub.client.recLeaveMsg = function (info) {
-            if (_debugmode === true) console.log(info.Name + "离开了");
+            if (_debugmode === true) console.log(info.Name + "离开了！");
         };
-        $.connection.hub.start()
-            .then(function () {
-                var name = Math.random() * 10;
-                guessHub.server.addToGroup(groupName, parseFloat(name));
-            })
-            .done(function () { if (_debugmode === true) console.log("server连接成功."); })
-            .fail(function () { if (_debugmode === true) console.log('server连接失败!'); });
+        $.connection.hub.start();
 
+        $("#btnConnect").click(function() {
+            var groupName = $("#tbRoomNo").val() || "11";
+            var name = chance.name();
+
+            guessHub.server.addToGroup(groupName, name).done(function() {
+                if (_debugmode === true) console.log("server连接成功.");
+            }).fail(function(error) {
+                if (_debugmode === true) console.log('server连接失败!');
+            });
+        });
         $("#btnStart").click(function () {
-            guessHub.server.startNewGame(groupName, "lll");
+            var groupName = $("#tbRoomNo").val() || "11";
+            console.log("待进入的房间号是:" + groupName);
+            guessHub.server.startNewGame(groupName, chance.word());
         });
         $("#btnEnd").click(function () {
+            var groupName = $("#tbRoomNo").val() || "11";
             guessHub.server.endGame(groupName, "");
         });
 
