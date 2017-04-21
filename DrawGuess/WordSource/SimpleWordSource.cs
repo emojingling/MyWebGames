@@ -19,11 +19,11 @@ namespace DrawGuess.WordSource
         {
             if (_words == null)
             {
-                _words = new string[]
+                _words = new[]
                 {
                     "蓝天", "台灯", "黑土", "教科书", "小汽车", "战争", "孔乙己", "电脑", "侦探", "柯南", "苹果手机", "建设银行", "五斗柜", "大连市"
                 };
-                _hints = new string[]
+                _hints = new []
                 {
                     "户外", "电器", "户外", "学习", "机器", "不好的大规模状态", "人物", "设备", "职业", "虚构的人物", "常见的个人设备", "财力雄厚", "家具", "行政区域"
                 };
@@ -31,7 +31,7 @@ namespace DrawGuess.WordSource
             }
         }
 
-        public WordGuess GetOne()
+        public WordGuess GetOne(int level = 0)
         {
             int length = _words.Length;
             int index = _ran.Next(0, length);
@@ -67,5 +67,13 @@ namespace DrawGuess.WordSource
             }
             return list;
         }
+
+        #region Implementation of IDisposable
+
+        public void Dispose()
+        {
+        }
+
+        #endregion
     }
 }

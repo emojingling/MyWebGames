@@ -209,6 +209,7 @@
     <Compile Include="Manager\GuessDbHelper.cs" />
     <Compile Include="SignalR\AddedGroupInfo.cs" />
     <Compile Include="SignalR\UserInfo.cs" />
+    <Compile Include="SignalR\UserMsg.cs" />
     <Compile Include="WordSource\IWordSource.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SignalR\DrawDispatcher.cs" />
@@ -218,6 +219,7 @@
     <Compile Include="SignalR\Startup.cs" />
     <Compile Include="WordSource\SimpleWordSource.cs" />
     <Compile Include="WordSource\WordGuess.cs" />
+    <Compile Include="WordSource\WordSource.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MyHelpers\MyHelpers.csproj">

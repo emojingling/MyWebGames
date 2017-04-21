@@ -65,6 +65,12 @@ namespace DrawGuess.SignalR
             _dispatcher.EndGame(groupName, winId);
         }
 
+        public void GuessWord(string groupName, string word)
+        {
+            string connectionId = Context.ConnectionId;
+            _dispatcher.GuessWord(groupName, connectionId, word);
+        }
+
         public override Task OnConnected()
         {
             return base.OnConnected();

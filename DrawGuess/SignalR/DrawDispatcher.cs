@@ -126,6 +126,15 @@ namespace DrawGuess.SignalR
             int count = list.Count;
         }
 
+        /// <summary>广播消息</summary>
+        /// <param name="groupName"></param>
+        /// <param name="msg"></param>
+        public void BroadcastMsg(string groupName, UserMsg msg)
+        {
+            if (string.IsNullOrEmpty(groupName)) _hubContext.Clients.All.recMsg(msg);
+            else _hubContext.Clients.Group(groupName).recMsg(msg);
+        }
+
         /// <summary>前台向后台更新绘制线</summary>
         /// <param name="connectionId">页面ID</param>
         /// <param name="info">绘制线信息</param>
@@ -262,8 +271,11 @@ namespace DrawGuess.SignalR
 
             ExitGroup(connectionId);
             _hubContext.Groups.Add(connectionId, groupName);
-            detail.ListConnectionId.Add(new UserInfo() {ConnectionId = connectionId, Name = userName});
+            var userInfo = new UserInfo() {ConnectionId = connectionId, Name = userName};
+            detail.ListConnectionId.Add(userInfo);
             detail.ListReadyId.Add(connectionId);
+            _hubContext.Clients.Group(groupName, connectionId).recEnterMsg(userInfo);
+
             return detail.IsPlaying ? "Playing" : "Waiting";
         }
 
@@ -290,12 +302,16 @@ namespace DrawGuess.SignalR
             {
                 GroupName = groupName,
                 IsPlaying = detail.IsPlaying,
+                HostID = detail.HostId,
                 UserInfos = detail.ListConnectionId.ToArray()
             };
 
+            var userInfo = new UserInfo() { ConnectionId = connectionId, Name = userName };
             _hubContext.Groups.Add(connectionId, groupName);
-            detail.ListConnectionId.Add(new UserInfo() { ConnectionId = connectionId, Name = userName });
+            detail.ListConnectionId.Add(userInfo);
             detail.ListReadyId.Add(connectionId);
+            _hubContext.Clients.Group(groupName, connectionId).recEnterMsg(userInfo);
+
             return info;
         }
 
@@ -371,10 +387,16 @@ namespace DrawGuess.SignalR
             GroupDetail detail;
             if (_dicGroup.TryGetValue(groupName, out detail))
             {
-                if (detail.IsPlaying && detail.GuessingWord.Equals(playerWord))
+                if (detail.IsPlaying)
                 {
-                    detail.LastUpdateId = connectionId;
-                    EndGame(groupName, connectionId);
+                    bool guessed = detail.GuessingWord.Equals(playerWord);   //是否猜中词语
+                    UserMsg msg = new UserMsg();
+                    msg.ConnectionId = connectionId;
+                    msg.Msg = playerWord;
+                    msg.MsgType = UserMsgType.GuessingWord;
+                    BroadcastMsg(groupName, msg);
+
+                    if (guessed) EndGame(groupName, connectionId);
                 }
             }
         }
@@ -385,7 +407,9 @@ namespace DrawGuess.SignalR
      * 1. drawLine(LineInfo info) - 被动更新绘制线信息。
      * 2. startGame() - 开始一局游戏。
      * 3. endGame(string winId) - winId为空表示时间到结束游戏；非空表示有玩家答对结束游戏。
-     * 4. recLeaveMsg(UserInfo info) - 被动接收其他用户的离开信息
-     * 5. newHostMsg(UserInfo info) - 被动接收更换房主的信息
+     * 4. recEnterMsg(UserInfo info) - 被动接收其他用户的进入信息
+     * 5. recLeaveMsg(UserInfo info) - 被动接收其他用户的离开信息
+     * 6. newHostMsg(UserInfo info) - 被动接收更换房主的信息
+     * 7. recMsg(UserMsg msg) - 被动接收用户键入的信息
      */
 }
