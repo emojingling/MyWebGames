@@ -81,6 +81,14 @@ namespace DrawGuess.SignalR
             return detail.ListConnectionId.Count >= MaxIdInGroup;
         }
 
+        /// <summary>判断房间是否为空</summary>
+        /// <param name="detail">房间信息</param>
+        /// <returns>房间是否为空</returns>
+        public bool IsGroupEmpty(GroupDetail detail)
+        {
+            return detail?.ListConnectionId.Count == 0;
+        }
+
         /// <summary>根据页面ID得到房间信息，未找到返回null</summary>
         /// <param name="connectionId">页面ID</param>
         /// <returns>房间信息，未找到返回null</returns>
@@ -159,6 +167,7 @@ namespace DrawGuess.SignalR
             {
                 InfoUpdated = oriDetail.InfoUpdated,
                 LastUpdateId = oriDetail.LastUpdateId,
+                HostId = oriDetail.HostId,
                 LastInfo = oriDetail.LastInfo,
                 IsPlaying =  oriDetail.IsPlaying,
                 GuessingWord = oriDetail.GuessingWord
@@ -199,10 +208,35 @@ namespace DrawGuess.SignalR
                     if (detail.ListPlayingId.Contains(connectionId)) detail.ListPlayingId.Remove(connectionId);
                     if (detail.ListGuessedId.Contains(connectionId)) detail.ListPlayingId.Remove(connectionId);
                     if (detail.ListReadyId.Contains(connectionId)) detail.ListReadyId.Remove(connectionId);
-                    if (detail.IsPlaying)
+
+                    if (detail.HostId.Equals(connectionId) && detail.ListConnectionId.Any())    //For condition of leaving id is host.
+                    {
+                        var newHost = detail.ListConnectionId.First();
+                        detail.HostId = newHost.ConnectionId;
+                        _hubContext.Clients.Group(pair.Key).newHostMsg(newHost);
+                    }
+
+                    if (detail.ListConnectionId.Any() && detail.IsPlaying)
                         _hubContext.Clients.Group(pair.Key).recLeaveMsg(ui);
                 }
             }
+        }
+
+        /// <summary>建立一个房间</summary>
+        /// <param name="connectionId"></param>
+        /// <param name="userName"></param>
+        /// <returns></returns>
+        public string CreateGroup(string connectionId, string userName)
+        {
+            var pair = _dicGroup.FirstOrDefault(p => IsGroupEmpty(p.Value));
+            if (pair.Equals(default(KeyValuePair<string, GroupDetail>))) return "NoRoom";
+
+            var code = AddToGroup(pair.Key, connectionId, userName);
+            if (code == "Empty") return "NoRoom";
+            pair.Value.HostId = connectionId;
+            pair.Value.IsPlaying = false;
+            pair.Value.InfoUpdated = true;
+            return pair.Key;
         }
 
         /// <summary>加入一个指定的房间</summary>
@@ -352,5 +386,6 @@ namespace DrawGuess.SignalR
      * 2. startGame() - 开始一局游戏。
      * 3. endGame(string winId) - winId为空表示时间到结束游戏；非空表示有玩家答对结束游戏。
      * 4. recLeaveMsg(UserInfo info) - 被动接收其他用户的离开信息
+     * 5. newHostMsg(UserInfo info) - 被动接收更换房主的信息
      */
 }

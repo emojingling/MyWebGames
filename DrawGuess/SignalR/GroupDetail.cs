@@ -8,6 +8,7 @@ namespace DrawGuess.SignalR
         public bool IsPlaying { get; set; }
         public string GuessingWord { get; set; }
         public string LastUpdateId { get; set; }
+        public string HostId { get; set; }
         public LineInfo LastInfo { get; set; }
         public List<UserInfo> ListConnectionId { get; set; }
         public List<string> ListPlayingId { get; set; }
@@ -21,6 +22,7 @@ namespace DrawGuess.SignalR
             IsPlaying = false;
             GuessingWord = null;
             LastUpdateId = null;
+            HostId = null;
             LastInfo = null;
             ListConnectionId = new List<UserInfo>();
             ListPlayingId = new List<string>();

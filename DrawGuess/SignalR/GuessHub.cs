@@ -33,6 +33,12 @@ namespace DrawGuess.SignalR
             _dispatcher.UploadLine(connectionId, info);
         }
 
+        public string CreateGroup(string userName)
+        {
+            string connectionId = Context.ConnectionId;
+            return _dispatcher.CreateGroup(connectionId, userName);
+        }
+
         public string AddToGroup(string groupName, string userName)
         {
             if (_debugMode)
